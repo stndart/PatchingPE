@@ -3,6 +3,7 @@ import polars as pl
 import ida_bytes
 import ida_kernwin
 
+
 def patch_bytes(patch_addr: str, mem_old: str, mem_new: str, verbose=False):
     """
     Replaces bytes at the given address in IDA memory if they match expected bytes.
@@ -29,8 +30,10 @@ def patch_bytes(patch_addr: str, mem_old: str, mem_new: str, verbose=False):
     if current_bytes != old_bytes:
         if patch == current_bytes.hex().upper() and not verbose:
             return True
-        
-        ida_kernwin.msg(f"[!] Memory at {patch_addr} does not match expected old bytes.\n")
+
+        ida_kernwin.msg(
+            f"[!] Memory at {patch_addr} does not match expected old bytes.\n"
+        )
         ida_kernwin.msg(f"    Expected: {mem_old}\n")
         ida_kernwin.msg(f"    Found:    {current_bytes.hex().upper()}\n")
         ida_kernwin.msg(f"    Wanted:   {patch}\n")
@@ -41,8 +44,11 @@ def patch_bytes(patch_addr: str, mem_old: str, mem_new: str, verbose=False):
         ida_bytes.patch_byte(ea + i, new_bytes[i])
 
     if verbose:
-        ida_kernwin.msg(f"[+] Patched {size} bytes at {patch_addr}: {mem_old} → {mem_new}\n")
+        ida_kernwin.msg(
+            f"[+] Patched {size} bytes at {patch_addr}: {mem_old} → {mem_new}\n"
+        )
     return True
+
 
 base = "C:/Users/Svyat/Desktop/RE/PatchingPE/game-dump/"
 fn0 = base + "calls_patch.csv"
@@ -50,14 +56,13 @@ calls_patch = pl.read_csv(fn0)
 
 counter = 0
 for patch_addr, mem_old, patch in calls_patch.rows():
-    if 'VERBOSE' not in locals() and 'VERBOSE' not in globals():
+    if "VERBOSE" not in locals() and "VERBOSE" not in globals():
         VERBOSE = False
-    
+
     if patch_bytes(patch_addr, mem_old, patch, verbose=VERBOSE):
         counter += 1
 
-print(f'Patched {counter}/{calls_patch.shape[0]} calls')
-
+print(f"Patched {counter}/{calls_patch.shape[0]} calls")
 
 
 fn1 = base + "thunks_patch.csv"
@@ -68,8 +73,7 @@ for patch_addr, mem_old, patch in thunks_patch.rows():
     if patch_bytes(patch_addr, mem_old, patch):
         counter += 1
 
-print(f'Patched {counter}/{thunks_patch.shape[0]} thunks')
-
+print(f"Patched {counter}/{thunks_patch.shape[0]} thunks")
 
 
 fn2 = base + "old_iat_patch.csv"
@@ -80,4 +84,4 @@ for patch_addr, mem_old, patch in iat_patch.rows():
     if patch_bytes(patch_addr, mem_old, patch):
         counter += 1
 
-print(f'Patched {counter}/{iat_patch.shape[0]} old iat entries')
+print(f"Patched {counter}/{iat_patch.shape[0]} old iat entries")

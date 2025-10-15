@@ -10,6 +10,7 @@ Requirements:
 Run on Windows to get undecoration through dbghelp.dll. On non-Windows, the script will still list decorated names
 but undecoration will be a no-op (or will attempt c++filt if available).
 """
+
 from __future__ import annotations
 import argparse
 import json
@@ -34,13 +35,14 @@ ADDITIONAL_PATHS = [
     r"G:\Games\FA\FA-EMU\Shipping",
 ]
 
+
 def find_dll(dll_name: str, additional_paths: list[str] = ADDITIONAL_PATHS) -> str:
     """
     Find DLL by searching in:
     1. Current directory
     2. C:\\Windows\\System32 (on Windows)
     3. Provided absolute/relative path
-    
+
     Returns:
         Full path to found DLL
     Raises:
@@ -49,25 +51,30 @@ def find_dll(dll_name: str, additional_paths: list[str] = ADDITIONAL_PATHS) -> s
     # If it's already an absolute path that exists
     if os.path.isabs(dll_name) and os.path.exists(dll_name):
         return dll_name
-    
+
     for p in additional_paths:
         basename = os.path.basename(dll_name)
         cand_name = os.path.join(p, basename)
         if os.path.exists(cand_name):
             return cand_name
-    
+
     # Check current directory first
     if os.path.exists(dll_name):
         return os.path.abspath(dll_name)
-    
+
     # On Windows, check System32
-    if platform.system().lower() == 'windows':
-        system32_path = os.path.join(os.environ.get('SystemRoot', 'C:\\Windows'), 'System32', dll_name)
+    if platform.system().lower() == "windows":
+        system32_path = os.path.join(
+            os.environ.get("SystemRoot", "C:\\Windows"), "System32", dll_name
+        )
         if os.path.exists(system32_path):
             return system32_path
-    
+
     # If we get here, file not found
-    raise FileNotFoundError(f"DLL not found: {dll_name} (searched current directory and System32)")
+    raise FileNotFoundError(
+        f"DLL not found: {dll_name} (searched current directory and System32)"
+    )
+
 
 def undecorate_windows(decorated: str) -> Optional[str]:
     """Use dbghelp.UnDecorateSymbolNameA to undecorate MSVC-style names on Windows."""
@@ -88,31 +95,39 @@ def undecorate_windows(decorated: str) -> Optional[str]:
         return None
 
     # input must be bytes (ANSI). LIEF returns Python str (likely ascii/utf-8), but Windows API expects ANSI.
-    b = decorated.encode('utf-8', errors='ignore')  # keep it simple
+    b = decorated.encode("utf-8", errors="ignore")  # keep it simple
     outbuf = create_string_buffer(MAX_STRING)
     r = func(b, outbuf, len(outbuf), UNDNAME_COMPLETE)
     if r == 0:
         # failed to undecorate
         return None
     try:
-        return outbuf.value.decode('utf-8', errors='ignore')
+        return outbuf.value.decode("utf-8", errors="ignore")
     except Exception:
-        return outbuf.value.decode('latin-1', errors='ignore')
+        return outbuf.value.decode("latin-1", errors="ignore")
+
 
 def undecorate_cxxfilt(decorated: str) -> Optional[str]:
     """Try to call c++filt (Itanium demangler) as fallback for non-MSVC mangling."""
     try:
-        p = subprocess.run(['c++filt'], input=decorated.encode('utf-8'), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True)
-        out = p.stdout.decode('utf-8', errors='ignore').strip()
+        p = subprocess.run(
+            ["c++filt"],
+            input=decorated.encode("utf-8"),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=True,
+        )
+        out = p.stdout.decode("utf-8", errors="ignore").strip()
         return out or None
     except Exception:
         return None
+
 
 def undecorate_any(decorated: str) -> str:
     """Try windows dbghelp first; then c++filt; otherwise return original decorated name."""
     if not decorated:
         return decorated
-    if platform.system().lower() == 'windows':
+    if platform.system().lower() == "windows":
         u = undecorate_windows(decorated)
         if u:
             return u
@@ -123,26 +138,29 @@ def undecorate_any(decorated: str) -> str:
     # fallback: return original
     return decorated
 
-def get_exports(dll_name: str, verbose: int = 0) -> Tuple[Dict[str, dict], Dict[str, List[str]]]:
+
+def get_exports(
+    dll_name: str, verbose: int = 0
+) -> Tuple[Dict[str, dict], Dict[str, List[str]]]:
     """
     Main function to get exports from a DLL.
-    
+
     Args:
         dll_name: Name or path of the DLL (will search current dir and System32)
         verbose: Verbosity level (0, 1, 2)
-        
+
     Returns:
         Tuple of (decorated_map, undec_map)
         decorated_map: dict decorated_name -> {ordinal, rva, forwarded}
         undec_map: dict undecorated_name -> [decorated_name,...]
-        
+
     Raises:
         FileNotFoundError: If DLL not found
         RuntimeError: If parsing fails
     """
     # Find the DLL
     dll_path = find_dll(dll_name)
-    
+
     decorated_map: Dict[str, dict] = {}
     undec_map: Dict[str, List[str]] = {}
 
@@ -166,7 +184,9 @@ def get_exports(dll_name: str, verbose: int = 0) -> Tuple[Dict[str, dict], Dict[
         try:
             exports = list(pe.get_exported_functions())
         except Exception:
-            logging.warning("Couldn't get exported functions via known LIEF APIs. Trying export table raw.")
+            logging.warning(
+                "Couldn't get exported functions via known LIEF APIs. Trying export table raw."
+            )
             exports = []
 
     # fallback: populate by parsing export objects if LIEF provides export entries
@@ -190,34 +210,37 @@ def get_exports(dll_name: str, verbose: int = 0) -> Tuple[Dict[str, dict], Dict[
         # ensure string
         if isinstance(name, bytes):
             try:
-                name = name.decode('utf-8', errors='ignore')
+                name = name.decode("utf-8", errors="ignore")
             except Exception:
-                name = name.decode('latin-1', errors='ignore')
+                name = name.decode("latin-1", errors="ignore")
 
-        decorated_map[name] = {
-            "ordinal": ordinal,
-            "rva": rva,
-            "forwarded": forwarded
-        }
+        decorated_map[name] = {"ordinal": ordinal, "rva": rva, "forwarded": forwarded}
 
         undec = undecorate_any(name)
         # if undecoration produced the same as decorated or failed, still keep it
         undec_map.setdefault(undec, []).append(name)
 
         if verbose >= 2:
-            logging.info("Export: decorated=%r undecorated=%r ordinal=%s rva=%s forwarded=%s",
-                         name, undec, ordinal, hex(rva) if rva else None, forwarded)
+            logging.info(
+                "Export: decorated=%r undecorated=%r ordinal=%s rva=%s forwarded=%s",
+                name,
+                undec,
+                ordinal,
+                hex(rva) if rva else None,
+                forwarded,
+            )
 
     return decorated_map, undec_map
+
 
 def process_multiple_dlls(dll_names: List[str], verbose: int = 0) -> Dict[str, dict]:
     """
     Process multiple DLLs and return combined results.
-    
+
     Args:
         dll_names: List of DLL names/paths
         verbose: Verbosity level
-        
+
     Returns:
         Dict with DLL names as keys and their export data as values
     """
@@ -228,19 +251,26 @@ def process_multiple_dlls(dll_names: List[str], verbose: int = 0) -> Dict[str, d
             results[dll_name] = {
                 "decorated": decorated_map,
                 "undecorated": undec_map,
-                "source": find_dll(dll_name)
+                "source": find_dll(dll_name),
             }
         except Exception as e:
             logging.error("Failed to process %s: %s", dll_name, e)
             results[dll_name] = {"error": str(e)}
-    
+
     return results
 
+
 def main():
-    ap = argparse.ArgumentParser(description="Extract decorated+undecorated exports from a DLL using LIEF + dbghelp")
+    ap = argparse.ArgumentParser(
+        description="Extract decorated+undecorated exports from a DLL using LIEF + dbghelp"
+    )
     ap.add_argument("dll", nargs="+", help="Path to DLL/PE to parse (multiple allowed)")
-    ap.add_argument("-o", "--out", help="Write JSON output file (decorated and undecorated maps)")
-    ap.add_argument("-v", "--verbose", action="count", default=0, help="Increase verbosity")
+    ap.add_argument(
+        "-o", "--out", help="Write JSON output file (decorated and undecorated maps)"
+    )
+    ap.add_argument(
+        "-v", "--verbose", action="count", default=0, help="Increase verbosity"
+    )
     args = ap.parse_args()
 
     # logging config
@@ -257,17 +287,21 @@ def main():
         dll_name = args.dll[0]
         try:
             decorated_map, undec_map = get_exports(dll_name, verbose=args.verbose)
-            
+
             # Summaries
             logging.info("Decorated exports: %d", len(decorated_map))
             logging.info("Undecorated names: %d", len(undec_map))
 
             # print brief table when verbosity low
             if args.verbose == 0:
-                print(f"Parsed {len(decorated_map)} exports from {dll_name}. Use -v for details.")
+                print(
+                    f"Parsed {len(decorated_map)} exports from {dll_name}. Use -v for details."
+                )
             elif args.verbose == 1:
                 for dec, info in decorated_map.items():
-                    print(f"{dec} -> ordinal={info['ordinal']} rva={hex(info['rva']) if info['rva'] else None}")
+                    print(
+                        f"{dec} -> ordinal={info['ordinal']} rva={hex(info['rva']) if info['rva'] else None}"
+                    )
             else:
                 # verbose >= 2: show undecorated mapping
                 for undec, decs in undec_map.items():
@@ -277,31 +311,34 @@ def main():
                 outdata = {
                     "decorated": decorated_map,
                     "undecorated": undec_map,
-                    "source": find_dll(dll_name)
+                    "source": find_dll(dll_name),
                 }
                 with open(args.out, "w", encoding="utf-8") as fh:
                     json.dump(outdata, fh, indent=2, ensure_ascii=False)
                 logging.info("Wrote JSON to %s", args.out)
-                
+
         except Exception as e:
             logging.error("Failed to process %s: %s", dll_name, e)
             sys.exit(2)
     else:
         # Multiple DLLs
         results = process_multiple_dlls(args.dll, verbose=args.verbose)
-        
+
         # Print summary
         for dll_name, data in results.items():
             if "error" in data:
                 print(f"{dll_name}: ERROR - {data['error']}")
             else:
-                print(f"{dll_name}: {len(data['decorated'])} exports, {len(data['undecorated'])} undecorated names")
-        
+                print(
+                    f"{dll_name}: {len(data['decorated'])} exports, {len(data['undecorated'])} undecorated names"
+                )
+
         # Write to file if requested
         if args.out:
             with open(args.out, "w", encoding="utf-8") as fh:
                 json.dump(results, fh, indent=2, ensure_ascii=False)
             logging.info("Wrote JSON to %s", args.out)
+
 
 if __name__ == "__main__":
     main()

@@ -2,9 +2,7 @@ import idautils  # type: ignore
 import idc  # type: ignore
 import csv
 
-out_path = (
-    r"C:\Users\Svyat\Desktop\RE\PatchingPE\broken-analyzed-calls.csv"
-)
+out_path = r"C:\Users\Svyat\Desktop\RE\PatchingPE\broken-analyzed-calls.csv"
 
 f = open(out_path, "w", newline="")
 writer = csv.writer(f)

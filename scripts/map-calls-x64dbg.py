@@ -11,12 +11,12 @@ It attempts multiple strategies (labels, symbol table, function table, module ex
 Note: result depends on which symbols/exports are loaded in x64dbg (PDBs, exported symbols, etc.).
 """
 
-from x64dbgpy.pluginsdk import x64dbg, gui # type: ignore
-from x64dbgpy.pluginsdk import module as modapi # type: ignore
-from x64dbgpy.pluginsdk import label as labelapi # type: ignore
-from x64dbgpy.pluginsdk import symbol as symapi # type: ignore
-from x64dbgpy.pluginsdk import function as funcapi # type: ignore
-from x64dbgpy.pluginsdk import misc as miscapi # type: ignore
+from x64dbgpy.pluginsdk import x64dbg, gui  # type: ignore
+from x64dbgpy.pluginsdk import module as modapi  # type: ignore
+from x64dbgpy.pluginsdk import label as labelapi  # type: ignore
+from x64dbgpy.pluginsdk import symbol as symapi  # type: ignore
+from x64dbgpy.pluginsdk import function as funcapi  # type: ignore
+from x64dbgpy.pluginsdk import misc as miscapi  # type: ignore
 
 
 def _to_int(addr):

@@ -13,6 +13,7 @@ but undecoration will be a no-op (or will attempt c++filt if available).
 Usage:
     python exports_both_names.py path\to\module.dll -o exports.json -v
 """
+
 from __future__ import annotations
 import argparse
 import json
@@ -31,6 +32,7 @@ except Exception as e:
 
 # Optional: windows-only ctypes call to dbghelp UnDecorateSymbolName
 UNDNAME_COMPLETE = 0  # full undecoration (flags as defined in dbghelp.h)
+
 
 def undecorate_windows(decorated: str) -> Optional[str]:
     """Use dbghelp.UnDecorateSymbolNameA to undecorate MSVC-style names on Windows."""
@@ -51,31 +53,39 @@ def undecorate_windows(decorated: str) -> Optional[str]:
         return None
 
     # input must be bytes (ANSI). LIEF returns Python str (likely ascii/utf-8), but Windows API expects ANSI.
-    b = decorated.encode('utf-8', errors='ignore')  # keep it simple
+    b = decorated.encode("utf-8", errors="ignore")  # keep it simple
     outbuf = create_string_buffer(2048)
     r = func(b, outbuf, len(outbuf), UNDNAME_COMPLETE)
     if r == 0:
         # failed to undecorate
         return None
     try:
-        return outbuf.value.decode('utf-8', errors='ignore')
+        return outbuf.value.decode("utf-8", errors="ignore")
     except Exception:
-        return outbuf.value.decode('latin-1', errors='ignore')
+        return outbuf.value.decode("latin-1", errors="ignore")
+
 
 def undecorate_cxxfilt(decorated: str) -> Optional[str]:
     """Try to call c++filt (Itanium demangler) as fallback for non-MSVC mangling."""
     try:
-        p = subprocess.run(['c++filt'], input=decorated.encode('utf-8'), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True)
-        out = p.stdout.decode('utf-8', errors='ignore').strip()
+        p = subprocess.run(
+            ["c++filt"],
+            input=decorated.encode("utf-8"),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=True,
+        )
+        out = p.stdout.decode("utf-8", errors="ignore").strip()
         return out or None
     except Exception:
         return None
+
 
 def undecorate_any(decorated: str) -> str:
     """Try windows dbghelp first; then c++filt; otherwise return original decorated name."""
     if not decorated:
         return decorated
-    if platform.system().lower() == 'windows':
+    if platform.system().lower() == "windows":
         u = undecorate_windows(decorated)
         if u:
             return u
@@ -85,6 +95,7 @@ def undecorate_any(decorated: str) -> str:
         return u
     # fallback: return original
     return decorated
+
 
 def parse_exports(dll_path: str, verbose: int = 0):
     """
@@ -115,7 +126,9 @@ def parse_exports(dll_path: str, verbose: int = 0):
         try:
             exports = list(pe.get_exported_functions())
         except Exception:
-            logging.warning("Couldn't get exported functions via known LIEF APIs. Trying export table raw.")
+            logging.warning(
+                "Couldn't get exported functions via known LIEF APIs. Trying export table raw."
+            )
             exports = []
 
     # fallback: populate by parsing export objects if LIEF provides export entries
@@ -139,31 +152,40 @@ def parse_exports(dll_path: str, verbose: int = 0):
         # ensure string
         if isinstance(name, bytes):
             try:
-                name = name.decode('utf-8', errors='ignore')
+                name = name.decode("utf-8", errors="ignore")
             except Exception:
-                name = name.decode('latin-1', errors='ignore')
+                name = name.decode("latin-1", errors="ignore")
 
-        decorated_map[name] = {
-            "ordinal": ordinal,
-            "rva": rva,
-            "forwarded": forwarded
-        }
+        decorated_map[name] = {"ordinal": ordinal, "rva": rva, "forwarded": forwarded}
 
         undec = undecorate_any(name)
         # if undecoration produced the same as decorated or failed, still keep it
         undec_map.setdefault(undec, []).append(name)
 
         if verbose >= 2:
-            logging.info("Export: decorated=%r undecorated=%r ordinal=%s rva=%s forwarded=%s",
-                         name, undec, ordinal, hex(rva) if rva else None, forwarded)
+            logging.info(
+                "Export: decorated=%r undecorated=%r ordinal=%s rva=%s forwarded=%s",
+                name,
+                undec,
+                ordinal,
+                hex(rva) if rva else None,
+                forwarded,
+            )
 
     return decorated_map, undec_map
 
+
 def main():
-    ap = argparse.ArgumentParser(description="Extract decorated+undecorated exports from a DLL using LIEF + dbghelp")
+    ap = argparse.ArgumentParser(
+        description="Extract decorated+undecorated exports from a DLL using LIEF + dbghelp"
+    )
     ap.add_argument("dll", help="Path to DLL/PE to parse")
-    ap.add_argument("-o", "--out", help="Write JSON output file (decorated and undecorated maps)")
-    ap.add_argument("-v", "--verbose", action="count", default=0, help="Increase verbosity")
+    ap.add_argument(
+        "-o", "--out", help="Write JSON output file (decorated and undecorated maps)"
+    )
+    ap.add_argument(
+        "-v", "--verbose", action="count", default=0, help="Increase verbosity"
+    )
     args = ap.parse_args()
 
     # logging config
@@ -191,7 +213,9 @@ def main():
         print(f"Parsed {len(decorated_map)} exports from {dll}. Use -v for details.")
     elif args.verbose == 1:
         for dec, info in decorated_map.items():
-            print(f"{dec} -> ordinal={info['ordinal']} rva={hex(info['rva']) if info['rva'] else None}")
+            print(
+                f"{dec} -> ordinal={info['ordinal']} rva={hex(info['rva']) if info['rva'] else None}"
+            )
     else:
         # verbose >= 2: show undecorated mapping
         for undec, decs in undec_map.items():
@@ -201,11 +225,12 @@ def main():
         outdata = {
             "decorated": decorated_map,
             "undecorated": undec_map,
-            "source": os.path.abspath(dll)
+            "source": os.path.abspath(dll),
         }
         with open(args.out, "w", encoding="utf-8") as fh:
             json.dump(outdata, fh, indent=2, ensure_ascii=False)
         logging.info("Wrote JSON to %s", args.out)
+
 
 if __name__ == "__main__":
     main()
