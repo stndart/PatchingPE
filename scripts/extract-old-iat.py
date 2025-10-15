@@ -1,7 +1,14 @@
 import csv
 import ida_bytes
+from pathlib import Path
+from dotenv import load_dotenv
+import os
 
-csv_path = r"C:\Users\Svyat\Desktop\RE\PatchingPE\old-iat.csv"
+load_dotenv(Path(__file__).parent.parent / ".env")
+
+csv_path = (
+    Path(os.getenv("BASE_TO_DUMPS", "./")) / "patchingPE/game-dump/dumps/old-iat.csv"
+)
 
 DEFAULT_START = "0x1588000"
 DEFAULT_END = "0x1588E6C"

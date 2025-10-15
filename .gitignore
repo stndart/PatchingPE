@@ -11,3 +11,7 @@ wheels/
 .vscode
 
 anti-debug-dump
+
+.env
+
+examples/ret0.exe
