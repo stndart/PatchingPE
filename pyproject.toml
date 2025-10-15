@@ -13,3 +13,17 @@ dependencies = [
     "polars>=1.34.0",
     "tqdm>=4.67.1",
 ]
+
+[tool.ruff]
+target-version = 'py310'
+extend-include = ["*.ipynb"]
+exclude = [
+    '.git',
+    '.ruff_cache',
+    '.venv',
+    'venv',
+]
+
+# Configure single quotes
+[tool.ruff.format]
+quote-style = 'double'
