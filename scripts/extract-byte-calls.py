@@ -1,16 +1,24 @@
+import csv
+import ctypes
+import os
+from pathlib import Path
+
+import ida_bytes  # type: ignore
 import idautils  # type: ignore
 import idc  # type: ignore
-import ida_bytes  # type: ignore
-import ctypes
-import csv
+from dotenv import load_dotenv
 
+load_dotenv(Path(__file__).parent.parent / ".env")
 
-out_path = r"C:\Users\Svyat\Desktop\RE\PatchingPE\broken-byte-calls.csv"
+out_path = (
+    Path(os.getenv("BASE_TO_DUMPS", "./"))
+    / "patchingPE/game-dump/dumps/broken-byte-calls.csv"
+)
 
 f = open(out_path, "w", newline="")
 writer = csv.writer(f)
 writer.writerow(
-    ["function", "Instruction", "Call address", "Destination", "Resolved name"]
+    ["subroutine", "Instruction", "Call address", "Destination", "Resolved name"]
 )
 
 # --- CONFIG ---
@@ -30,7 +38,7 @@ def check_in_bounds(addr: int):
         return True  # xinput
     if 0x10000000 <= addr <= 0x1000B000:
         return True  # physxloader
-    if 0x5DD00000 <= addr <= 0x77000000:
+    if 0x5DD00000 <= addr <= 0x77300000:
         return True  # the rest
     return False
 

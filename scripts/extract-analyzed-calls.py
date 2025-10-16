@@ -1,13 +1,22 @@
+import csv
+import os
+from pathlib import Path
+
 import idautils  # type: ignore
 import idc  # type: ignore
-import csv
+from dotenv import load_dotenv
 
-out_path = r"C:\Users\Svyat\Desktop\RE\PatchingPE\broken-analyzed-calls.csv"
+load_dotenv(Path(__file__).parent.parent / ".env")
+
+out_path = (
+    Path(os.getenv("BASE_TO_DUMPS", "./"))
+    / "patchingPE/game-dump/dumps/broken-analyzed-calls.csv"
+)
 
 f = open(out_path, "w", newline="")
 writer = csv.writer(f)
 writer.writerow(
-    ["function", "Instruction", "Call address", "Destination", "Resolved name"]
+    ["subroutine", "Instruction", "Call address", "Destination", "Resolved name"]
 )
 
 
@@ -25,12 +34,15 @@ def check_in_bounds(addr: int):
 
 first_seg, second_seg = list(idautils.Segments())[:2]
 
+# allowed_instr = ("call", "jmp", "jz", "jnz")
+allowed_instr = ("call", "jmp")
+
 count = 0
 for func_ea in idautils.Functions(first_seg, second_seg):
     func_name = idc.get_func_name(func_ea)
     for head in idautils.FuncItems(func_ea):
         instr = idc.print_insn_mnem(head)
-        if instr == "call" or instr == "jmp":
+        if instr in allowed_instr:
             target = idc.get_operand_value(head, 0)
             if not check_in_bounds(target):
                 continue  # local function

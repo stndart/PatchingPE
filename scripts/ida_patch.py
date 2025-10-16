@@ -1,7 +1,10 @@
 import polars as pl
 
-import ida_bytes
-import ida_kernwin
+import ida_bytes  # type: ignore
+import ida_kernwin  # type: ignore
+from pathlib import Path
+from dotenv import load_dotenv
+import os
 
 
 def patch_bytes(patch_addr: str, mem_old: str, mem_new: str, verbose=False):
@@ -50,23 +53,32 @@ def patch_bytes(patch_addr: str, mem_old: str, mem_new: str, verbose=False):
     return True
 
 
-base = "C:/Users/Svyat/Desktop/RE/PatchingPE/game-dump/"
-fn0 = base + "calls_patch.csv"
-calls_patch = pl.read_csv(fn0)
+load_dotenv(Path(__file__).parent.parent / ".env")
+
+csv_base = Path(os.getenv("BASE_TO_DUMPS", "./")) / "patchingPE/game-dump/patches"
+fn0 = csv_base / "calls_patch.csv"
+try:
+    calls_patch = pl.read_csv(fn0)
+except FileNotFoundError:
+    calls_patch = pl.DataFrame()
 
 counter = 0
 for patch_addr, mem_old, patch in calls_patch.rows():
     if "VERBOSE" not in locals() and "VERBOSE" not in globals():
         VERBOSE = False
 
-    if patch_bytes(patch_addr, mem_old, patch, verbose=VERBOSE):
+    if patch_bytes(patch_addr, mem_old, patch, verbose=VERBOSE):  # pyright: ignore[reportPossiblyUnboundVariable]
         counter += 1
 
 print(f"Patched {counter}/{calls_patch.shape[0]} calls")
 
 
-fn1 = base + "thunks_patch.csv"
-thunks_patch = pl.read_csv(fn1)
+csv_base = Path(os.getenv("BASE_TO_DUMPS", "./")) / "patchingPE/game-dump/patches"
+fn1 = csv_base / "thunks_patch.csv"
+try:
+    thunks_patch = pl.read_csv(fn1)
+except FileNotFoundError:
+    thunks_patch = pl.DataFrame()
 
 counter = 0
 for patch_addr, mem_old, patch in thunks_patch.rows():
@@ -74,14 +86,3 @@ for patch_addr, mem_old, patch in thunks_patch.rows():
         counter += 1
 
 print(f"Patched {counter}/{thunks_patch.shape[0]} thunks")
-
-
-fn2 = base + "old_iat_patch.csv"
-iat_patch = pl.read_csv(fn2)
-
-counter = 0
-for patch_addr, mem_old, patch in iat_patch.rows():
-    if patch_bytes(patch_addr, mem_old, patch):
-        counter += 1
-
-print(f"Patched {counter}/{iat_patch.shape[0]} old iat entries")

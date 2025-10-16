@@ -1,5 +1,5 @@
 import csv
-import ida_bytes
+import ida_bytes  # type: ignore
 from pathlib import Path
 from dotenv import load_dotenv
 import os
