@@ -12,6 +12,7 @@ dependencies = [
     "numpy>=2.3.3",
     "pefile>=2024.8.26",
     "polars>=1.34.0",
+    "pydantic>=2.12.2",
     "tqdm>=4.67.1",
 ]
 

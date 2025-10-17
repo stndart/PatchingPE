@@ -16,8 +16,7 @@ def hex_to_LE(num: int) -> bytearray:
 
 
 def rel_call(src: str, dst: str) -> bytearray:
-    src_str = hex(int(src, base=16) + 5)
-    rel = int(dst[2:], base=16) - int(src_str[2:], base=16)
+    rel = int(dst, base=16) - int(src, base=16)
     return hex_to_LE(rel)
 
 

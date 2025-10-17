@@ -61,6 +61,7 @@ try:
     calls_patch = pl.read_csv(fn0)
 except FileNotFoundError:
     calls_patch = pl.DataFrame()
+    print(f"Not found calls_patch file at {csv_base}")
 
 counter = 0
 for patch_addr, mem_old, patch in calls_patch.rows():
@@ -79,6 +80,7 @@ try:
     thunks_patch = pl.read_csv(fn1)
 except FileNotFoundError:
     thunks_patch = pl.DataFrame()
+    print(f"Not found thunks_patch file at {csv_base}")
 
 counter = 0
 for patch_addr, mem_old, patch in thunks_patch.rows():
