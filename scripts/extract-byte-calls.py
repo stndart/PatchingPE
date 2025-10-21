@@ -5,6 +5,7 @@ from pathlib import Path
 
 import ida_bytes  # type: ignore
 import ida_nalt  # type: ignore
+import ida_segment  # type: ignore
 import idautils  # type: ignore
 import idc  # type: ignore
 from dotenv import load_dotenv
@@ -70,18 +71,36 @@ if ida_nalt.get_input_file_path().endswith(".dll"):
     # Neomon.dll has fake section, which may have direct calls
     PATTERNS += [
         ("e8 ? ? ? ?", "call-near"),
+        ("ff 25 ? ? ? ?", "jmp-far"),
+        ("ff 15 ? ? ? ?", "call-far"),
     ]
 
-start, end = list(idautils.Segments())[:2]
+segments_to_search = [0, 1]
+segs = list(idautils.Segments())
+if ida_nalt.get_input_file_path().endswith(".dll"):
+    segments_to_search += [2]
+    for i in range(3, len(segs)):
+        start_ea = ida_segment.getnseg(i).start_ea
+        name = idc.get_segm_name(start_ea)
+        if "fake" in name:
+            segments_to_search.append(i)
+print(segments_to_search)
+
+sea = [ida_segment.getnseg(i).start_ea for i in segments_to_search]
+eea = [ida_segment.getnseg(i).end_ea for i in segments_to_search]
 
 
 def call_target_from_pattern(ea: int, pattern: str) -> int:
-    if pattern.startswith("90"):
+    if pattern.startswith(("ff 25", "ff 15")):  # straight jmp / call
+        disp_u32 = ida_bytes.get_dword(ea + 6)  # unsigned 32-bit
+        return ctypes.c_int32(disp_u32).value
+
+    elif pattern.startswith("90"):
         call_ea = ea + 1
     elif pattern.startswith(("e8", "e9")):
         call_ea = ea
     else:
-        raise ValueError("pattern_type must be '90e8' or 'e890'")
+        raise ValueError("pattern_type must be '90e8', 'e890', 'ff25' or 'ff15'")
 
     # verify opcode is really 0xE8
     opcode = ida_bytes.get_byte(call_ea)
@@ -100,17 +119,24 @@ def call_target_from_pattern(ea: int, pattern: str) -> int:
     return next_insn + disp_signed
 
 
-print(f"[*] Searching in section [{hex(start)} - {hex(end)}]")
+print(f"[*] Searching in sections {segments_to_search}")
 
 for pattern, inst in PATTERNS:
     print(f"[*] Searching for pattern: {pattern} ({inst})")
-    ea = start
     count = 0
 
+    i_seg = 0
+    start, end = sea[0], eea[0]
+    ea = sea[0]
     while True:
         ea = idc.find_bytes(pattern, range_start=ea, range_end=end)
         if ea == idc.BADADDR or ea >= end:
-            break
+            i_seg += 1
+            if i_seg >= len(sea):
+                break
+            start, end = sea[i_seg], eea[i_seg]
+            print(hex(start), hex(end), count)
+            continue
 
         target = call_target_from_pattern(ea, pattern)
         if check_in_bounds(target):
