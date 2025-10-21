@@ -4,16 +4,47 @@ import os
 from pathlib import Path
 
 import ida_bytes  # type: ignore
+import ida_nalt  # type: ignore
 import idautils  # type: ignore
 import idc  # type: ignore
 from dotenv import load_dotenv
 
+
+def check_in_bounds_game(addr: int):
+    if addr < 0x6D40000:
+        return False  # main part
+    if 0x6D40000 <= addr <= 0x6D41000:
+        return True  # xinput
+    if 0x10000000 <= addr <= 0x1000B000:
+        return True  # physxloader
+    if 0x5DD00000 <= addr <= 0x77300000:
+        return True  # the rest
+    return False
+
+
+def check_in_bounds_neomon(addr: int):
+    if 0x02000000 <= addr <= 0x02300000:
+        return True  # fake neomon section
+    if 0x10000000 <= addr <= 0x10500000:
+        return True  # neomon
+    if 0x60000000 <= addr <= 0x78000000:
+        return True  # the rest dlls
+    return False
+
+
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-out_path = (
-    Path(os.getenv("BASE_TO_DUMPS", "./"))
-    / "patchingPE/game-dump/dumps/broken-byte-calls.csv"
-)
+base_dumps = Path(os.getenv("BASE_TO_DUMPS", "./")) / "patchingPE"
+
+
+if ida_nalt.get_input_file_path().endswith(".dll"):
+    check_in_bounds = check_in_bounds_neomon
+    out_path = base_dumps / "neomon-dump/dumps/broken-byte-calls.csv"
+elif ida_nalt.get_input_file_path().endswith(".exe"):
+    check_in_bounds = check_in_bounds_game
+    out_path = base_dumps / "game-dump/dumps/broken-byte-calls.csv"
+else:
+    raise RuntimeError("Uknown file extension!")
 
 f = open(out_path, "w", newline="")
 writer = csv.writer(f)
@@ -31,18 +62,6 @@ PATTERNS = [
 ]
 
 start, end = list(idautils.Segments())[:2]
-
-
-def check_in_bounds(addr: int):
-    if addr < 0x6D40000:
-        return False  # main part
-    if 0x6D40000 <= addr <= 0x6D41000:
-        return True  # xinput
-    if 0x10000000 <= addr <= 0x1000B000:
-        return True  # physxloader
-    if 0x5DD00000 <= addr <= 0x77300000:
-        return True  # the rest
-    return False
 
 
 def call_target_from_pattern(ea: int, pattern: str) -> int:
