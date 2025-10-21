@@ -2,6 +2,7 @@ import polars as pl
 
 import ida_bytes  # type: ignore
 import ida_kernwin  # type: ignore
+import ida_nalt  # type: ignore
 from pathlib import Path
 from dotenv import load_dotenv
 import os
@@ -31,7 +32,7 @@ def patch_bytes(patch_addr: str, mem_old: str, mem_new: str, verbose=False):
 
     # Compare
     if current_bytes != old_bytes:
-        if patch == current_bytes.hex().upper() and not verbose:
+        if mem_new == current_bytes.hex().upper() and not verbose:
             return True
 
         ida_kernwin.msg(
@@ -39,8 +40,8 @@ def patch_bytes(patch_addr: str, mem_old: str, mem_new: str, verbose=False):
         )
         ida_kernwin.msg(f"    Expected: {mem_old}\n")
         ida_kernwin.msg(f"    Found:    {current_bytes.hex().upper()}\n")
-        ida_kernwin.msg(f"    Wanted:   {patch}\n")
-        return patch == current_bytes.hex().upper()
+        ida_kernwin.msg(f"    Wanted:   {mem_new}\n")
+        return mem_new == current_bytes.hex().upper()
 
     # Patch
     for i in range(size):
@@ -53,38 +54,49 @@ def patch_bytes(patch_addr: str, mem_old: str, mem_new: str, verbose=False):
     return True
 
 
+def patch_batch(patch_table: pl.DataFrame, name: str, verbose: bool = False):
+    counter = 0
+    for patch_addr, mem_old, patch in patch_table.rows():
+        if patch_bytes(patch_addr, mem_old, patch, verbose=verbose):  # pyright: ignore[reportPossiblyUnboundVariable]
+            counter += 1
+
+    print(f"Patched {counter}/{patch_table.shape[0]} {name}")
+
+
+if "VERBOSE" not in locals() and "VERBOSE" not in globals():
+    VERBOSE = False
+
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-csv_base = Path(os.getenv("BASE_TO_DUMPS", "./")) / "patchingPE/game-dump/patches"
+csv_base = Path(os.getenv("BASE_TO_DUMPS", "./")) / "patchingPE"
+if ida_nalt.get_input_file_path().endswith(".dll"):
+    csv_base /= "neomon-dump/patches"
+elif ida_nalt.get_input_file_path().endswith(".exe"):
+    csv_base /= "game-dump/patches"
+else:
+    raise RuntimeError("Uknown file extension!")
+
+print(f"Loading patches from {csv_base}")
+
 fn0 = csv_base / "calls_patch.csv"
 try:
     calls_patch = pl.read_csv(fn0)
+    patch_batch(calls_patch, "calls")
 except FileNotFoundError:
-    calls_patch = pl.DataFrame()
     print(f"Not found calls_patch file at {csv_base}")
 
-counter = 0
-for patch_addr, mem_old, patch in calls_patch.rows():
-    if "VERBOSE" not in locals() and "VERBOSE" not in globals():
-        VERBOSE = False
 
-    if patch_bytes(patch_addr, mem_old, patch, verbose=VERBOSE):  # pyright: ignore[reportPossiblyUnboundVariable]
-        counter += 1
-
-print(f"Patched {counter}/{calls_patch.shape[0]} calls")
-
-
-csv_base = Path(os.getenv("BASE_TO_DUMPS", "./")) / "patchingPE/game-dump/patches"
 fn1 = csv_base / "thunks_patch.csv"
 try:
     thunks_patch = pl.read_csv(fn1)
+    patch_batch(thunks_patch, "thunks")
 except FileNotFoundError:
-    thunks_patch = pl.DataFrame()
     print(f"Not found thunks_patch file at {csv_base}")
 
-counter = 0
-for patch_addr, mem_old, patch in thunks_patch.rows():
-    if patch_bytes(patch_addr, mem_old, patch):
-        counter += 1
 
-print(f"Patched {counter}/{thunks_patch.shape[0]} thunks")
+fn2 = csv_base / "iat_patch.csv"
+try:
+    iat_patch = pl.read_csv(fn2)
+    patch_batch(iat_patch, "iat entries")
+except FileNotFoundError:
+    print(f"Not found iat_patch file at {csv_base}")

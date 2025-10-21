@@ -25,10 +25,15 @@ def check_in_bounds_game(addr: int):
 def check_in_bounds_neomon(addr: int):
     if 0x02000000 <= addr <= 0x02300000:
         return True  # fake neomon section
+    if 0x10016000 <= addr <= 0x10016230:
+        return True  # neomon iat
     if 0x10000000 <= addr <= 0x10500000:
-        return True  # neomon
-    if 0x60000000 <= addr <= 0x78000000:
-        return True  # the rest dlls
+        return False  # neomon main section (excluded iat)
+    # these two are not needed really, since neomon.dll doesn't have any <direct call> obfuscations
+    if 0x60000000 <= addr <= 0x69A00000:
+        return True  # the rest dlls 1st pt
+    if 0x70000000 <= addr <= 0x78000000:
+        return True  # the rest dlls 2nd pt
     return False
 
 
@@ -60,6 +65,12 @@ PATTERNS = [
     ("e9 ? ? ? ? 90", "jmp2"),  # JMP + NOP
     ("e9 ? ? ? ?", "jmp-near"),  # JMP
 ]
+
+if ida_nalt.get_input_file_path().endswith(".dll"):
+    # Neomon.dll has fake section, which may have direct calls
+    PATTERNS += [
+        ("e8 ? ? ? ?", "call-near"),
+    ]
 
 start, end = list(idautils.Segments())[:2]
 
