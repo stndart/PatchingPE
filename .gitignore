@@ -15,3 +15,14 @@ anti-debug-dump
 .env
 
 examples/ret0.exe
+
+*.exe
+*.dll
+*.lib
+*.exp
+*.obj
+*.id*
+*.i64
+*.nam
+*.til
+*.bin
