@@ -92,7 +92,7 @@ eea = [ida_segment.getnseg(i).end_ea for i in segments_to_search]
 
 def call_target_from_pattern(ea: int, pattern: str) -> int:
     if pattern.startswith(("ff 25", "ff 15")):  # straight jmp / call
-        disp_u32 = ida_bytes.get_dword(ea + 6)  # unsigned 32-bit
+        disp_u32 = ida_bytes.get_dword(ea + 2)  # unsigned 32-bit
         return ctypes.c_int32(disp_u32).value
 
     elif pattern.startswith("90"):
