@@ -27,7 +27,7 @@ int main() {
   if (!prepare_neomon(hDll, DllMain, neomon_name))
     return 1;
 
-  std::cout << "NeoMon loaded\n";
+  std::cout << neomon_name << " loaded\n";
 
   return workflow(hDll);
 }
