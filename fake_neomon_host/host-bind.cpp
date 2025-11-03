@@ -1,4 +1,5 @@
 #define _X86_
+
 #include <iostream>
 #include <windows.h>
 
@@ -11,24 +12,77 @@ extern "C" __declspec(dllimport) int NIGS_5();
 extern "C" __declspec(dllimport) int NIGS_6();
 extern "C" __declspec(dllimport) int NIGS_7();
 
+void patch_neomon() {
+  HMODULE h;
+  h = LoadLibraryA("user32.dll");
+  std::cout << "Loaded user32.dll at " << std::hex << h << std::endl;
+
+  HMODULE hnm;
+  hnm = GetModuleHandle("NeoMon.dll");
+  if (!hnm) {
+    std::cout << "Failed to acquire neomon handle\n";
+    return;
+  }
+  std::cout << "Found neomon.dll at " << std::hex << hnm << std::endl;
+
+  FARPROC findwindowa = GetProcAddress(h, "FindWindowA");
+  if (!findwindowa) {
+    std::cout << "Failed to find FindWindowA in user32.dll\n";
+    return;
+  }
+  std::cout << "Found FindWindowA at " << std::hex
+            << reinterpret_cast<void *>(findwindowa) << std::endl;
+
+  DWORD *old_fwa_ptr =
+      reinterpret_cast<DWORD *>(reinterpret_cast<BYTE *>(hnm) + 0x27571);
+  DWORD old_fwa = *old_fwa_ptr;
+
+  DWORD proc_dec_key =
+      reinterpret_cast<DWORD *>(reinterpret_cast<BYTE *>(hnm) + 0x1aebe7)[0];
+  std::cout << "Proc addr decryption key: " << std::hex << proc_dec_key << "\n";
+
+  std::cout << "Bytes at old findwindowa address[0x" << std::hex
+            << (int)old_fwa_ptr << "]: " << std::hex << old_fwa << "\n";
+  DWORD dec_fwa = old_fwa ^ proc_dec_key;
+  std::cout << "Decrypted: " << std::hex << dec_fwa << "\n";
+
+  DWORD *old_user32_ptr =
+      reinterpret_cast<DWORD *>(reinterpret_cast<BYTE *>(hnm) + 0x1e1f58);
+  DWORD old_user32 = *old_user32_ptr;
+
+  DWORD mod_dec_key = 0x2c896e24;
+  std::cout << "Bytes at old user32 address[0x" << std::hex
+            << (int)old_user32_ptr << "]: " << std::hex << old_user32 << "\n";
+  DWORD dec_user32 = old_user32 + mod_dec_key;
+  std::cout << "Decrypted: " << std::hex << dec_user32 << "\n";
+
+  DWORD n;
+  n = ((DWORD)h) - mod_dec_key;
+  std::cout << "Replacing with actual addresses.\nUser32.dll:\n"
+            << std::hex << old_user32 << " -> " << std::hex << n << "\n";
+  old_user32_ptr[0] = n;
+
+  n = ((DWORD)findwindowa) ^ proc_dec_key;
+  std::cout << "FindWindowA:\n"
+            << std::hex << old_fwa << " -> " << std::hex << n << "\n";
+  old_fwa_ptr[0] = n;
+  std::cout << "Done\n";
+}
+
 int main() {
   std::cout << "DLL will load automatically due to implicit linking..."
             << std::endl;
   std::cout << "Set breakpoint here - DLL should be unpacked by now!"
             << std::endl;
 
+  patch_neomon();
+
   std::cout << "Press Enter to call functions..." << std::endl;
   std::cin.get();
 
-  int N = 1;
-  int (*fs[])() = {
-      NIGS_1, NIGS_2, NIGS_3, NIGS_4, NIGS_5, NIGS_6, NIGS_7,
-  };
-  for (size_t i = 1; i <= N; ++i) {
-    int a = fs[i - 1]();
-    std::cout << "Function NIGS_" << i << " called successfully: " << std::hex
-              << a << std::endl;
-  }
+  int a = NIGS_1();
+  std::cout << "Function NIGS_" << 1 << " called successfully: " << std::hex
+            << a << std::endl;
   std::cout << "Press Enter to run a loop..." << std::endl;
   std::cin.get();
 
