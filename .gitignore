@@ -11,6 +11,8 @@ wheels/
 .vscode
 
 anti-debug-dump
+incremental_patch
+fake_neomon_host/dumps
 
 .env
 

@@ -6,9 +6,12 @@ from pathlib import Path
 import ida_bytes  # type: ignore
 import ida_nalt  # type: ignore
 import ida_segment  # type: ignore
+import idaapi  # type: ignore
 import idautils  # type: ignore
 import idc  # type: ignore
 from dotenv import load_dotenv
+
+ibase = idaapi.get_imagebase()
 
 
 def check_in_bounds_game(addr: int):
@@ -18,18 +21,19 @@ def check_in_bounds_game(addr: int):
         return True  # xinput
     if 0x10000000 <= addr <= 0x1000B000:
         return True  # physxloader
-    if 0x5DD00000 <= addr <= 0x77300000:
+    if 0x5DD00000 <= addr:
         return True  # the rest
     return False
 
 
 def check_in_bounds_neomon(addr: int):
-    if 0x02000000 <= addr <= 0x02300000:
+    if 0x02000000 <= addr <= 0x03000000:
         return True  # fake neomon section
-    if 0x10016000 <= addr <= 0x10016230:
+    if ibase + 0x16000 <= addr <= ibase + 0x16230:
         return True  # neomon iat
-    if 0x10000000 <= addr <= 0x10500000:
+    if ibase <= addr <= ibase + 0x500000:
         return False  # neomon main section (excluded iat)
+
     # these two are not needed really, since neomon.dll doesn't have any <direct call> obfuscations
     if 0x60000000 <= addr <= 0x69A00000:
         return True  # the rest dlls 1st pt
