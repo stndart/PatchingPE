@@ -1,6 +1,6 @@
 Calladdr,Address,Ordinal,Function,Module
 0x10816000,0x699c1eb0,139,GetTcpTable,iphlpapi.dll
-0x10816008,0x24d0000,,,section_24d
+0x10816008,0x24d0000,,GetProcAddress,kernel32.dll
 0x1081600c,0x76cc3100,542,GetCurrentProcessId,kernel32.dll
 0x10816010,0x76cc3150,140,CloseHandle,kernel32.dll
 0x10816014,0x24d0189,,OpenProcess,kernel32.dll
@@ -45,13 +45,13 @@ Calladdr,Address,Ordinal,Function,Module
 0x108160b0,0x24f0000,,HeapReAlloc,kernel32.dll
 0x108160b4,0x24f055a,,HeapSize,kernel32.dll
 0x108160b8,0x76cbf620,698,GetProcessHeap,kernel32.dll
-0x108160bc,0x2500000,,,section_250
-0x108160c0,0x250016c,,,section_250
+0x108160bc,0x2500000,,InterlockedExchange,kernel32.dll
+0x108160c0,0x250016c,,InterlockedCompareExchange,kernel32.dll
 0x108160c4,0x2500294,,TerminateProcess,kernel32.dll
 0x108160c8,0x2500346,,UnhandledExceptionFilter,kernel32.dll
 0x108160cc,0x2500480,,SetUnhandledExceptionFilter,kernel32.dll
 0x108160d0,0x76cc2370,902,IsDebuggerPresent,kernel32.dll
-0x108160d4,0x2500547,,,section_250
+0x108160d4,0x2500547,,QueryPerformanceCounter,kernel32.dll
 0x108160d8,0x250067c,,SizeofResource,kernel32.dll
 0x108160e0,0x6a255b67,141,??$?MGU?$char_traits@G@std@@V?$allocator@G@1@@std@@YA_NABV?$basic_string@GU?$char_traits@G@std@@V?$allocator@G@2@@0@0@Z,msvcp90.dll
 0x108160e4,0x6a258b0f,697,??4?$basic_string@GU?$char_traits@G@std@@V?$allocator@G@2@@std@@QAEAAV01@PBG@Z,msvcp90.dll

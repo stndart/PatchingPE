@@ -1,4 +1,5 @@
 Offset,Function,Module
+0x008,GetProcAddress,kernel32.dll
 0x014,OpenProcess,kernel32.dll
 0x028,ResumeThread,kernel32.dll
 0x030,TerminateThread,kernel32.dll
@@ -23,8 +24,11 @@ Offset,Function,Module
 0x0ac,HeapFree,kernel32.dll
 0x0b0,HeapReAlloc,kernel32.dll
 0x0b4,HeapSize,kernel32.dll
+0x0bc,InterlockedExchange,kernel32.dll
+0x0c0,InterlockedCompareExchange,kernel32.dll
 0x0c4,TerminateProcess,kernel32.dll
 0x0c8,UnhandledExceptionFilter,kernel32.dll
 0x0cc,SetUnhandledExceptionFilter,kernel32.dll
+0x0d4,QueryPerformanceCounter,kernel32.dll
 0x0d8,SizeofResource,kernel32.dll
 0x210,wvsprintfW,user32.dll
