@@ -1,6 +1,7 @@
 Offset,Function,Module
 0x008,GetProcAddress,kernel32.dll
 0x014,OpenProcess,kernel32.dll
+0x020,CreateThread,kernel32.dll
 0x028,ResumeThread,kernel32.dll
 0x030,TerminateThread,kernel32.dll
 0x03c,CreateFileMappingW,kernel32.dll

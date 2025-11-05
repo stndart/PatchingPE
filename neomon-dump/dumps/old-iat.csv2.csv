@@ -6,7 +6,7 @@ Calladdr,Address,Ordinal,Function,Module
 0x10816014,0x24d0189,,OpenProcess,kernel32.dll
 0x10816018,0x76cc3160,305,DuplicateHandle,kernel32.dll
 0x1081601c,0x76cc30f0,541,GetCurrentProcess,kernel32.dll
-0x10816020,0x24d0227,,,section_24d
+0x10816020,0x24d0227,,CreateThread,kernel32.dll
 0x10816024,0x76cc3600,596,GetFileType,kernel32.dll
 0x10816028,0x24d04b5,,ResumeThread,kernel32.dll
 0x1081602c,0x76cc3340,1504,WaitForSingleObject,kernel32.dll
