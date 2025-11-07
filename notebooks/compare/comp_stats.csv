@@ -1,0 +1,3 @@
+file1_section,file2_section,file1_sec_name,file2_sec_name,file1_size,file2_size,file1_hash,file2_hash,bytes_different,pct_different,status
+0,0,   ,   ,119296,119296,5842c370558f6787f76096f9,c610da7d294fe90c8c5d71bd,5671,4.75,different
+3,3,        ,        ,2691584,2691584,b023abb9a8619d1113951977,49ea5c0e273f8d432caaabaa,11838,0.44,different
