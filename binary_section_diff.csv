@@ -1,0 +1,7 @@
+reference_file,target_file,section_index,ref_section_name,tgt_section_name,ref_size,tgt_size,ref_hash,tgt_hash,bytes_different,pct_different,status
+C:\Games\FA-EMU\Shipping\GAME_patched.exe,C:\Games\FA-EMU\Shipping\GAME_1.exe,1,   ,   ,20974592,20974592,cc735d182659a1ff7124393d,cc735d182659a1ff7124393d,0,0.0,identical
+C:\Games\FA-EMU\Shipping\GAME_patched.exe,C:\Games\FA-EMU\Shipping\GAME_1.exe,1,   ,   ,20974592,20974592,cc735d182659a1ff7124393d,cc735d182659a1ff7124393d,0,0.0,identical
+C:\Games\FA-EMU\Shipping\GAME_patched.exe,C:\Games\FA-EMU\Shipping\GAME_1.exe,2,.rsrc,.rsrc,3028992,3028992,e743c1a8045eb4cd5ec8f9fd,e743c1a8045eb4cd5ec8f9fd,0,0.0,identical
+C:\Games\FA-EMU\Shipping\GAME_patched.exe,C:\Games\FA-EMU\Shipping\GAME_1.exe,3,.idata  ,.idata  ,512,512,f59e9510b2ae43d6f6e67dd7,f59e9510b2ae43d6f6e67dd7,0,0.0,identical
+C:\Games\FA-EMU\Shipping\GAME_patched.exe,C:\Games\FA-EMU\Shipping\GAME_1.exe,4,        ,        ,2747904,2747904,cb47e455901884c82b1c2383,cb47e455901884c82b1c2383,0,0.0,identical
+C:\Games\FA-EMU\Shipping\GAME_patched.exe,C:\Games\FA-EMU\Shipping\GAME_1.exe,5,wlovhtaq,wlovhtaq,1996288,1996288,2c85ecf28ebaabae87b29f04,2c85ecf28ebaabae87b29f04,0,0.0,identical
