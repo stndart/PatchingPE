@@ -25,3 +25,5 @@ wheels/
 
 game-dump-remote/
 game-dump-remote-2/
+fake_neomon_host/
+incremental_patch/
