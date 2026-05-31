@@ -14,21 +14,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pe_imports import check_in_bounds_game  # noqa: E402
 from pe_rva import PeImage, SectionInfo  # noqa: E402
-
-# --- bounds (same as extract-byte-calls.py) ---
-
-
-def check_in_bounds_game(addr: int) -> bool:
-    if addr < 0x6D40000:
-        return False  # in-image game VA (not a foreign stub target)
-    if 0x6D40000 <= addr <= 0x6D41000:
-        return True  # xinput
-    if 0x10000000 <= addr < 0x5DD00000:
-        return True  # modules + packer stubs (e.g. NeoMon 0x1080xxxx)
-    if 0x5DD00000 <= addr:
-        return True  # high DLL range
-    return False
 
 
 def check_in_bounds_neomon(addr: int, ibase: int) -> bool:

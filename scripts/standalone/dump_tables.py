@@ -72,13 +72,22 @@ def apply_ntdll_forward_fixup(iat: pl.DataFrame) -> pl.DataFrame:
     return iat
 
 
-def inject_stolen_wsprintf(iat: pl.DataFrame) -> pl.DataFrame:
-    """Tag scratch slot 0x1588AB0 as user32!wsprintfA (in-place, not appended)."""
+def inject_stolen_wsprintf(iat: pl.DataFrame, dump_imports: pl.DataFrame) -> pl.DataFrame:
+    """Tag scratch slot 0x1588AB0 as user32!wsprintfA and point it at the real export."""
     ws = pl.col("Calladdr").str.slice(2).str.to_integer(base=16) == 0x1588AB0
-    return iat.with_columns(
+    wsprintf = dump_imports.filter(
+        (pl.col("Module") == "user32.dll") & (pl.col("Function") == "wsprintfA")
+    )
+    real_addr = wsprintf["Address"][0] if wsprintf.height else None
+    iat = iat.with_columns(
         pl.when(ws).then(pl.lit("user32.dll")).otherwise(pl.col("Module")).alias("Module"),
         pl.when(ws).then(pl.lit("wsprintfA")).otherwise(pl.col("Function")).alias("Function"),
     )
+    if real_addr:
+        iat = iat.with_columns(
+            pl.when(ws).then(pl.lit(real_addr)).otherwise(pl.col("Address")).alias("Address")
+        )
+    return iat
 
 
 def load_iat_table(dumps_dir: Path, game_export: Path | None = None) -> pl.DataFrame:
@@ -87,7 +96,7 @@ def load_iat_table(dumps_dir: Path, game_export: Path | None = None) -> pl.DataF
     iat = iat.rename({"Address": "Calladdr", "Destination": "Address"})
     iat = iat.with_columns(("0x" + pl.col("Address").str.to_lowercase()).alias("Address"))
     iat = iat.join(dump_imports, on="Address", how="left")
-    iat = inject_stolen_wsprintf(iat)  # before drop — keeps slot in user32 segment order
+    iat = inject_stolen_wsprintf(iat, dump_imports)  # before drop — keeps slot in user32 segment order
     iat = iat.filter(pl.col("Module").is_not_null())
     return apply_ntdll_forward_fixup(iat)
 

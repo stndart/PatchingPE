@@ -16,7 +16,11 @@ sys.path.insert(0, str(_REPO / "notebooks"))
 
 from addr_helpers import int_to_LE, rel_call, to_bin  # noqa: E402
 from dump_tables import load_dump_imports, load_iat_table  # noqa: E402
-from pe_imports import STOLEN_CODE_VA_LO, STOLEN_CODE_VA_HI  # noqa: E402
+from pe_imports import (  # noqa: E402
+    STOLEN_API_OVERRIDES,
+    STOLEN_CODE_VA_LO,
+    STOLEN_CODE_VA_HI,
+)
 
 IAT_BEGIN = 0x01588000
 EXTRA_THUNK_CALL_ADDRS = {
@@ -186,6 +190,18 @@ def main() -> int:
     calls = calls.join(thunks_to_join, on="Destination", how="left")
     calls = calls.join(iat_join, on="Destination", how="left")
 
+    def resolve_iat_calladdr(dest: str, iat_addr: str | None) -> str | None:
+        if iat_addr:
+            return iat_addr
+        override = STOLEN_API_OVERRIDES.get(int(dest, 16))
+        if not override:
+            return None
+        mod, func = override
+        hit = iat.filter((pl.col("Module") == mod) & (pl.col("Function") == func))
+        if hit.is_empty():
+            return None
+        return hit["Calladdr"][0]
+
     call_exceptions = {"0x61fffa"}
     patch_rows = []
     missing = []
@@ -193,7 +209,7 @@ def main() -> int:
         addr = row["Call address"]
         dest = row["Destination"]
         inst = row["Instruction"]
-        iat_addr = row.get("iat address")
+        iat_addr = resolve_iat_calladdr(dest, row.get("iat address"))
         thunk_addr = row.get("thunk address")
         if not iat_addr:
             missing.append(f"{addr} -> {dest}")

@@ -15,15 +15,15 @@ ibase = idaapi.get_imagebase()
 
 
 def check_in_bounds_game(addr: int):
-    if addr < 0x6D40000:
-        return False  # in-image game VA (not a foreign stub target)
-    if 0x6D40000 <= addr <= 0x6D41000:
-        return True  # xinput
-    if 0x10000000 <= addr < 0x5DD00000:
-        return True  # modules + packer stubs (e.g. NeoMon 0x1080xxxx)
-    if 0x5DD00000 <= addr:
-        return True  # high DLL range
-    return False
+    import sys
+    from pathlib import Path
+
+    _standalone = Path(__file__).resolve().parent / "standalone"
+    if str(_standalone) not in sys.path:
+        sys.path.insert(0, str(_standalone))
+    from pe_imports import check_in_bounds_game as _check
+
+    return _check(addr)
 
 
 def check_in_bounds_neomon(addr: int):

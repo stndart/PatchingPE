@@ -15,6 +15,21 @@ STOLEN_CODE_VA_LO = 0x219D000
 STOLEN_CODE_VA_HI = 0x243D000
 
 
+def check_in_bounds_game(addr: int) -> bool:
+    """Valid packer-stub target VAs for GAME.exe extract (not plain in-image calls)."""
+    if STOLEN_CODE_VA_LO <= addr <= STOLEN_CODE_VA_HI:
+        return True  # reclaimed packer code (e.g. wsprintfA at 0x23e3673)
+    if addr < 0x6D40000:
+        return False  # in-image game VA (internal call/jmp — not a DLL stub)
+    if 0x6D40000 <= addr <= 0x6D41000:
+        return True  # xinput
+    if 0x10000000 <= addr < 0x5DD00000:
+        return True  # modules + packer stubs (e.g. NeoMon 0x1080xxxx)
+    if 0x5DD00000 <= addr:
+        return True  # high DLL range
+    return False
+
+
 def pe_import_slot_map(path: str | Path) -> dict[tuple[str, str], int]:
     """(dll_lower, function_or_Ordinal#n) -> absolute VA of IAT slot."""
     pe = pefile.PE(str(path))
