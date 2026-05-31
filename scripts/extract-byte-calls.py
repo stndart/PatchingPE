@@ -16,13 +16,13 @@ ibase = idaapi.get_imagebase()
 
 def check_in_bounds_game(addr: int):
     if addr < 0x6D40000:
-        return False  # main part
+        return False  # in-image game VA (not a foreign stub target)
     if 0x6D40000 <= addr <= 0x6D41000:
         return True  # xinput
-    if 0x10000000 <= addr <= 0x1000B000:
-        return True  # physxloader
+    if 0x10000000 <= addr < 0x5DD00000:
+        return True  # modules + packer stubs (e.g. NeoMon 0x1080xxxx)
     if 0x5DD00000 <= addr:
-        return True  # the rest
+        return True  # high DLL range
     return False
 
 

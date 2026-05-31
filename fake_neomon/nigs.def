@@ -1,4 +1,0 @@
-LIBRARY nigs
-EXPORTS
-    NIGS_1
-    NIGS_2

@@ -10,13 +10,7 @@ wheels/
 .venv
 .vscode
 
-anti-debug-dump
-incremental_patch
-fake_neomon_host/dumps
-
 .env
-
-examples/ret0.exe
 
 *.exe
 *.dll
@@ -28,3 +22,6 @@ examples/ret0.exe
 *.nam
 *.til
 *.bin
+
+game-dump-remote/
+game-dump-remote-2/
