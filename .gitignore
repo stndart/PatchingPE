@@ -23,7 +23,12 @@ wheels/
 *.til
 *.bin
 
+game-dump/
 game-dump-remote/
 game-dump-remote-2/
+game-dump-remote-3/
+game-dump-remote-4/
+game-dump-remote-5/
+game-dump-remote-6/
 fake_neomon_host/
 incremental_patch/

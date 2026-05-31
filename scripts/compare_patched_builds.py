@@ -19,7 +19,25 @@ _REPO = Path(__file__).resolve().parent.parent
 if str(_REPO / "scripts" / "standalone") not in sys.path:
     sys.path.insert(0, str(_REPO / "scripts" / "standalone"))
 
-from pe_rva import DEAD_SECTION_NAMES, IAT_END, IAT_START, PeImage, classify_ptr  # noqa: E402
+from pe_rva import (  # noqa: E402
+    DEAD_SECTION_NAMES,
+    IAT_END,
+    IAT_START,
+    PeImage,
+    REAL_IDATA_RVA,
+    STOLEN_REGION_RVA_LO,
+    classify_ptr,
+)
+
+
+def _section_is_dead(sec) -> bool:
+    name = sec.name.strip().lower()
+    if name in DEAD_SECTION_NAMES:
+        return True
+    rva = sec.virtual_address
+    if rva == REAL_IDATA_RVA and name == ".idata":
+        return False
+    return STOLEN_REGION_RVA_LO <= rva < REAL_IDATA_RVA
 
 
 def imports_table(path: Path) -> dict[str, set[str]]:
@@ -100,7 +118,7 @@ def section_byte_diffs(a: PeImage, b: PeImage, code_only: bool = False) -> list[
     """Per-section diff counts; skips dead sections."""
     rows: list[tuple[str, int, int]] = []
     for sa, sb in zip(a.sections, b.sections):
-        if sa.name.lower() in DEAD_SECTION_NAMES:
+        if _section_is_dead(sa):
             continue
         if code_only and sa.index > 1:
             continue

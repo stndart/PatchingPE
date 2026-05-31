@@ -9,7 +9,10 @@ from pathlib import Path
 import pefile
 
 # Dead packer sections: preserve in image; exclude from byte diffs (post-reboot noise).
+# Also stolen packer RVAs 0x1d9c000..0x2225ffff (VA 0x219c000..) — see compare_call_sites.py.
 DEAD_SECTION_NAMES = frozenset({"wlovhtaq", "oemvvlbu"})
+STOLEN_REGION_RVA_LO = 0x1D9C000
+REAL_IDATA_RVA = 0x2226000
 
 IAT_START = 0x1588000
 IAT_END = 0x1588E6C
